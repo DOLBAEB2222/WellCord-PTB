@@ -16,7 +16,8 @@ import (
 )
 
 type config struct {
-	Cleanup bool `yaml:"cleanup" mapstructure:"cleanup"`
+	Cleanup bool        `yaml:"cleanup" mapstructure:"cleanup"`
+	Proxy   ProxyConfig `yaml:"proxy" mapstructure:"proxy"`
 }
 
 var (
@@ -35,6 +36,9 @@ func init() {
 	// Default config
 	cfg = &config{
 		Cleanup: false,
+		Proxy: ProxyConfig{
+			Mode: "system",
+		},
 	}
 
 	// Init app
@@ -89,6 +93,7 @@ func main() {
 		"--user-data-dir=" + app.DataPath,
 	}
 	app.WorkingDir = electronAppPath
+	applyProxyArgs(cfg.Proxy, &app.Args)
 
 	// Cleanup on exit
 	if cfg.Cleanup {
