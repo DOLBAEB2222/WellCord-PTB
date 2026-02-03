@@ -24,6 +24,11 @@ var (
 	cfg *config
 )
 
+const defaultSettings = `{
+  "SKIP_HOST_UPDATE": true,
+  "USE_PINNED_UPDATE_MANIFEST": true
+}`
+
 func init() {
 	var err error
 
@@ -36,6 +41,43 @@ func init() {
 	if app, err = portapps.NewWithCfg("discord-ptb-portable", "DiscordPTB", cfg); err != nil {
 		log.Fatal().Err(err).Msg("Cannot initialize application. See log file for more info.")
 	}
+}
+
+func ensureSettings(settingsPath string) error {
+	if _, err := os.Stat(settingsPath); err != nil {
+		if errors.Is(err, os.ErrNotExist) {
+			return os.WriteFile(settingsPath, []byte(defaultSettings), 0644)
+		}
+		return err
+	}
+
+	rawSettings, err := os.ReadFile(settingsPath)
+	if err != nil {
+		return err
+	}
+
+	jsonMapSettings := make(map[string]interface{})
+	if err = json.Unmarshal(rawSettings, &jsonMapSettings); err != nil {
+		return err
+	}
+
+	jsonMapSettings["SKIP_HOST_UPDATE"] = true
+	jsonMapSettings["USE_PINNED_UPDATE_MANIFEST"] = true
+
+	jsonSettings, err := json.Marshal(jsonMapSettings)
+	if err != nil {
+		return err
+	}
+
+	return os.WriteFile(settingsPath, jsonSettings, 0644)
+}
+
+func writeAssetFile(assetName, destination string) error {
+	assetData, err := assets.Asset(assetName)
+	if err != nil {
+		return err
+	}
+	return os.WriteFile(destination, assetData, 0644)
 }
 
 func main() {
