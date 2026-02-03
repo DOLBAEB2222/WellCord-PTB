@@ -5,12 +5,9 @@
 package main
 
 import (
-	"encoding/json"
-	"errors"
 	"os"
 	"path"
 
-	"github.com/portapps/discord-ptb-portable/assets"
 	"github.com/portapps/portapps/v3"
 	"github.com/portapps/portapps/v3/pkg/log"
 	"github.com/portapps/portapps/v3/pkg/registry"
