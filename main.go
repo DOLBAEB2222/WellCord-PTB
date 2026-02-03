@@ -5,13 +5,9 @@
 package main
 
 import (
-	"encoding/json"
-	"io"
 	"os"
 	"path"
-	"strings"
 
-	"github.com/portapps/discord-ptb-portable/assets"
 	"github.com/portapps/portapps/v3"
 	"github.com/portapps/portapps/v3/pkg/log"
 	"github.com/portapps/portapps/v3/pkg/registry"
@@ -73,61 +69,18 @@ func main() {
 
 	// Update settings
 	settingsPath := utl.PathJoin(app.DataPath, "settings.json")
-	if _, err := os.Stat(settingsPath); err == nil {
-		log.Info().Msg("Update settings...")
-		rawSettings, err := os.ReadFile(settingsPath)
-		if err == nil {
-			jsonMapSettings := make(map[string]interface{})
-			if err = json.Unmarshal(rawSettings, &jsonMapSettings); err != nil {
-				log.Error().Err(err).Msg("Settings unmarshal")
-			}
-			log.Info().Interface("settings", jsonMapSettings).Msg("Current settings")
-
-			jsonMapSettings["SKIP_HOST_UPDATE"] = true
-			jsonMapSettings["USE_PINNED_UPDATE_MANIFEST"] = true
-			log.Info().Interface("settings", jsonMapSettings).Msg("New settings")
-
-			jsonSettings, err := json.Marshal(jsonMapSettings)
-			if err != nil {
-				log.Error().Err(err).Msg("Settings marshal")
-			}
-			err = os.WriteFile(settingsPath, jsonSettings, 0644)
-			if err != nil {
-				log.Error().Err(err).Msg("Write settings")
-			}
-		}
-	} else {
-		fo, err := os.Create(settingsPath)
-		if err != nil {
-			log.Error().Err(err).Msg("Cannot create settings.json")
-		}
-		defer fo.Close()
-		if _, err = io.Copy(fo, strings.NewReader(`{
-  "SKIP_HOST_UPDATE": true,
-  "USE_PINNED_UPDATE_MANIFEST": true
-}`)); err != nil {
-			log.Error().Err(err).Msg("Cannot write to settings.json")
-		}
+	if err := ensureSettings(settingsPath); err != nil {
+		log.Error().Err(err).Msg("Cannot update settings.json")
 	}
 
 	// Copy pinned_update.json
-	pinnedUpdate, err := assets.Asset("pinned_update.json")
-	if err != nil {
-		log.Error().Err(err).Msg("Cannot load asset pinned_update.json")
-	}
-	err = os.WriteFile(utl.PathJoin(app.DataPath, "pinned_update.json"), pinnedUpdate, 0644)
-	if err != nil {
+	if err := writeAssetFile("pinned_update.json", utl.PathJoin(app.DataPath, "pinned_update.json")); err != nil {
 		log.Error().Err(err).Msg("Cannot write pinned_update.json")
 	}
 
 	// Copy default shortcut
 	shortcutPath := path.Join(utl.StartMenuPath(), "Discord PTB Portable.lnk")
-	defaultShortcut, err := assets.Asset("DiscordPTB.lnk")
-	if err != nil {
-		log.Error().Err(err).Msg("Cannot load asset DiscordPTB.lnk")
-	}
-	err = os.WriteFile(shortcutPath, defaultShortcut, 0644)
-	if err != nil {
+	if err := writeAssetFile("DiscordPTB.lnk", shortcutPath); err != nil {
 		log.Error().Err(err).Msg("Cannot write default shortcut")
 	}
 
